@@ -1,0 +1,344 @@
+﻿---------------------------------
+GetFlightsFormFlow
+--------------1------------------
+%dw 1.0
+%output application/java
+---
+ payload
+--------------2------------------
+%dw 1.0
+%output application/json
+---
+ payload
+--------------3------------------
+%dw 1.0
+%output application/json
+---
+data: payload
+---------------4------------------
+%dw 1.0
+%output application/json
+---
+data: {
+	hub: "MUA",
+	code: payload.destination,
+	airline: payload.airline
+}
+----------------5------------------
+%dw 1.0
+%output application/xml
+---
+data: {
+	hub: "MUA",
+	code: payload.destination,
+	airline: payload.airline
+}
+----------------6-----------------
+%dw 1.0
+%output application/xml
+---
+data: {
+	hub: "MUA",
+	flight: {
+		code: payload.destination,
+		airline: payload.airline
+	}
+
+}
+---------------7-----------------
+%dw 1.0
+%output application/xml
+---
+data: {
+	hub: "MUA",
+	flight @(airline: payload.airline ): {
+		code: payload.destination,
+		airline: payload.airline
+	}
+
+}
+------------------------------------
+Create a new flow - Add static JSON payload data:
+-Add a Set Payload transformer paste the below value into the value field.
+
+[{"airlineName":"United","price":400,"departureDate":"2015/03/20","planeType":"Boeing 737","origination":"MUA","flightCode":"ER38sd","availableSeats":0,"destination":"SFO"},{"airlineName":"United","price":945,"departureDate":"2015/09/11","planeType":"Boeing 757","origination":"MUA","flightCode":"ER39rk","availableSeats":54,"destination":"SFO"},{"airlineName":"United","price":954,"departureDate":"2015/02/12","planeType":"Boeing 777","origination":"MUA","flightCode":"ER39rj","availableSeats":23,"destination":"SFO"}]
+
+-Add a DataWeave Transform Message and a Logger to the flow.
+
+----------------8-------------------
+%dw 1.0
+%output application/java
+---
+payload
+----------------9-------------------
+payload[0].price
+----------------10-------------------
+payload[0].*price
+----------------11-------------------
+payload.price
+----------------12-------------------
+[payload.price, payload.availableSeats]
+----------------13-------------------
+[payload.*price, payload.availableSeats]
+----------------14-------------------
+payload map $
+---------------15--------------------
+payload map {
+	flights: $$
+} 
+------------------16-----------------
+payload map {
+	flights: $$,
+	dest: $.destination
+}
+-------------17----------------------
+payload map {
+	flights: $$,
+	($$): $
+}
+------------------18-----------------
+payload map {
+	'flights$$': $
+}
+----------------19-------------------
+Change the output to JSON and test the application
+%dw 1.0
+%output application/java
+---
+payload
+--------------20---------------------
+Change the expression to output valid XML and test the application
+%dw 1.0
+%output application/xml
+---
+flights: {(payload map {
+'flight$$':$
+}
+)}
+-----------------------------------
+Add static XML payload data
+
+<ns2:listAllFlightsResponse xmlns:ns2="http://soap.training.mulesoft.com/"><return airlineName="United"><code>A1B2C3</code><departureDate>2015/10/20</departureDate><destination>SFO</destination><emptySeats>40</emptySeats><origin>MUA</origin><planeType>Boing 737</planeType><price>400.0</price></return><return airlineName="Delta"><code>A1B2C4</code><departureDate>2015/10/21</departureDate><destination>LAX</destination><emptySeats>10</emptySeats><origin>MUA</origin><planeType>Boing 737</planeType><price>199.99</price></return><return airlineName="Delta"><code>AFFFC5</code><departureDate>2015/10/21</departureDate><destination>PDX</destination><emptySeats>30</emptySeats><origin>MUA</origin><planeType>Boing 777</planeType><price>283.0</price></return><return airlineName="Delta"><code>AFFFC4</code><departureDate>2015/10/20</departureDate><destination>PDX</destination><emptySeats>0</emptySeats><origin>MUA</origin><planeType>Boing 777</planeType><price>283.0</price></return><return airlineName="Delta"><code>AFFFC3</code><departureDate>2015/10/20</departureDate><destination>PDX</destination><emptySeats>23</emptySeats><origin>MUA</origin><planeType>Boing 777</planeType><price>283.0</price></return></ns2:listAllFlightsResponse>
+
+------------21-----------------------
+%dw 1.0
+%output application/json
+---
+payload
+-------------22----------------------
+%dw 1.0
+%output application/xml
+---
+flights: {(payload map {
+'flight$$':$
+}
+)}
+--------------23---------------------
+flights: {(payload.listAllFlightsResponse map {
+'flight$$':$
+}
+)}
+--------------------24---------------
+flights: {(payload.listAllFlightsResponse.return map {
+'flight$$':$
+}
+)}
+---------------25--------------------
+flights: {(payload.listAllFlightsResponse.*return map {
+'flight$$':$
+}
+)}
+-------------------26----------------
+flights: {(payload.listAllFlightsResponse.*return map {
+	
+	flight:{
+		dest: $.destination,
+		price: $.price
+	       }
+	}
+)}
+--------------27-------------------
+Change the output to json
+
+%dw 1.0
+%output application/json
+---
+flights: {(payload.listAllFlightsResponse.*return map {
+	
+	flight:{
+		dest: $.destination,
+		price: $.price
+	       }
+	}
+)}
+----------------28----------------------
+Remove the {( and )} around the payload map expression
+
+%dw 1.0
+%output application/json
+---
+flights: payload.listAllFlightsResponse.*return map {
+	
+	flight:{
+		dest: $.destination,
+		price: $.price
+	       }
+	}
+-------------29------------------------
+Change the DataWeave expression to return an array of objects without the flights and flight properties
+
+payload.listAllFlightsResponse.*return map {
+dest: $.destination,
+price: $.price
+}	
+
+Save the file and run the application.
+----------30--------------------------
+
+Walkthrough 12-4: Use DataWeave operators
+• Format strings, dates, and numbers.
+• Convert data types.
+• Replace data values using pattern matching.
+• Order data, filter data, and remove duplicate data.
+• Define and use custom data types.
+• Transform objects to POJOs.
+
+%dw 1.0
+%output application/json
+---
+payload.listAllFlightsResponse.*return map {
+	
+		dest: $.destination,
+		price: $.price ,
+		plane: upper $.planeType 
+		    
+	
+}
+-------------31----------------------------
+payload.listAllFlightsResponse.*return map {
+dest: $.destination,
+price: $.price as :number,
+plane: upper $.planeType,
+departureDate: $.departureDate
+}
+-----------------32-------------------------
+Change the transform output type from json to java.
+%output application/java
+--------------------33----------------------
+Look at the Preview tab;; you should see the departureDate property is a String
+- will make it as Date field
+departureDate: $.departureDate as :date
+- Look at the format of the dates in the sample data in the payload tab in the Input section
+{format: "yyyy/MM/dd"}
+
+payload.listAllFlightsResponse.*return map {
+dest: $.destination,
+price: $.price as :number,
+plane: upper $.planeType,
+departureDate: $.departureDate as :date {format: "yyyy/MM/dd"}
+}
+-----------------34------------------------
+Format a date:
+- Use the as operator to convert the dates to strings, which can then be formatted.
+departureDate: $.departureDate as :date {format: "yyyy/MM/dd"} as :string
+------------------35-----------------------
+Use the format operator with any pattern letters and characters to format the date strings.
+departureDate: $.departureDate as :date {format: "yyyy/MM/dd"} as :string {format: "MMM dd, yyyy"}
+-----------------------------------------
+Change the transform output from java to json
+%output application/json
+Save the file and run the application
+--------------------36---------------------
+Format a number:
+Use the format operator in the DataWeave expression to format the prices with two decimal places
+price: $.price as :number {format: "###.##"},
+-----------------------37------------------
+Change the DataWeave expression to format the prices to zero decimal places
+price: $.price as :number {format: "###"},
+--------------------38---------------------
+To get trailing zeros, convert the numbers to strings and format the strings
+price: $.price as :number as :string {format: "#,###.00"},
+--------------------39---------------------
+Use the as operator again to convert the formatted strings back to numbers
+price: $.price as :number as :string {format: "#,###.00"} as :number,
+---------------------40--------------------
+Define a custom data type:
+Set it to a number formatted to have no digits after the decimal point
+%type currency = :number {format: "###"}
+
+In the DataWeave expression, set the price to be of type currency.
+price: $.price as :currency,
+------------------41-----------------------
+Replace data values
+Use the replace operator in the DataWeave expression to replace the string Boing with Boeing
+plane: $.planeType replace /(Boing)/ with "Boeing",
+------------------42-----------------------
+Order data:
+- In the Preview tab, look at the flight prices;; the flights should not be ordered by price.
+- Change the DataWeave expression to use the orderBy operator to order the objects by price.
+payload.listAllFlightsResponse.*return map {
+} orderBy $.price
+
+orderBy $.departureDate orderBy $.price
+------------------43----------------------
+Remove duplicate data:
+-Use the distinctBy operator in the DataWeave expression to remove any duplicate objects.
+payload.listAllFlightsResponse.*return map {
+} orderBy $.departureDate orderBy $.price distinctBy $.price
+------------------44----------------------
+Add an availableSeats field that is equal to the emptySeats field and coerce it to a number.
+availableSeats: $.emptySeats as :number
+-------------------45---------------------
+In the header section of the Transform section, define a custom data type called flight that is a
+com.mulesoft.training.Flight Java object.
+%type flight = :object {class: "com.mulesoft.training.Flight"}
+----
+In the DataWeave expression, set the map objects to be of type flight.
+payload.listAllFlightsResponse.*return map {
+…
+} as :flight orderBy $.departureDate orderBy $.price distinctBy $.price
+--------------------46------------------
+Change the name of the dest key to destination.
+
+destination: $.destination,
+
+Change the name of the plane key to planeType.
+planeType: $.planeType,
+
+final DWL:
+----------
+%dw 1.0
+%output application/java
+%type currency = :number {format: "###"}
+%type flight = :object {class: "com.mulesoft.training.Flight"}
+---
+payload.listAllFlightsResponse.*return map {
+destination: $.destination,
+price: $.price as :number,
+planeType: $.planeType replace /(Boing)/ with "Boeing",
+availableSeats: $.emptySeats as :number,
+departureDate: $.departureDate as :date {format: "yyyy/MM/dd"} as :string
+
+}as :flight orderBy $.departureDate orderBy $.price distinctBy $.price
+
+-----------------47-----------------
+Add a filter to the DataWeave expression that removes any objects that have availableSeats
+equal to 0.
+payload.listAllFlightsResponse.*return map {
+…
+} as :flight orderBy $.departureDate orderBy $.price distinctBy $
+filter ($.availableSeats !=0)
+------------45----------------------
+%dw 1.0
+%output application/java
+%type flight = :object {class: "com.mulesoft.training.Flight"}
+---
+payload.listAllFlightsResponse.*return map {
+	
+	destination: $.destination,
+	price: $.price as :number,
+	planeType: $.planeType replace /(Boing)/ with "Boeing",
+	availableSeats: $.emptySeats as :number
+	
+} as :flight
+----------------------------------
